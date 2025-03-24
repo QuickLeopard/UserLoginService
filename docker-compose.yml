@@ -1,0 +1,330 @@
+services:
+  # Envoy Load Balancer
+  envoy:
+    image: envoyproxy/envoy:v1.27-latest
+    container_name: envoy
+    ports:
+      - "8080:8080"  # Main service port
+      - "9901:9901"  # Admin port
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml
+    networks:
+      - microservice-network
+    depends_on:
+      - userloginservice1
+      - userloginservice2
+      - userloginservice3
+    # For high-load scenarios
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # User Login gRPC Service - Instance 1
+  userloginservice1:
+    build:
+      context: .
+      dockerfile: UserLoginService/Dockerfile
+    container_name: userloginservice1
+    image: slepneviv/highloaduserloginservice-userloginservice1
+    expose:
+      - "80"
+      - "443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=pgpool;Port=5432;Database=userlogindb;Username=postgres;Password=postgres;
+      - ConnectionStrings__RedisConnection=redis:6379,abortConnect=false,connectTimeout=5000,syncTimeout=5000
+    depends_on:
+      - pgpool
+      - redis
+    restart: on-failure
+    networks:
+      - microservice-network
+    # Health check to ensure the service is running properly
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    # For high-load scenarios
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # User Login gRPC Service - Instance 2
+  userloginservice2:
+    build:
+      context: .
+      dockerfile: UserLoginService/Dockerfile
+    container_name: userloginservice2
+    expose:
+      - "80"
+      - "443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=pgpool;Port=5432;Database=userlogindb;Username=postgres;Password=postgres;
+      - ConnectionStrings__RedisConnection=redis:6379,abortConnect=false,connectTimeout=5000,syncTimeout=5000
+    depends_on:
+      - pgpool
+      - redis
+    restart: on-failure
+    networks:
+      - microservice-network
+    # Health check to ensure the service is running properly
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    # For high-load scenarios
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # User Login gRPC Service - Instance 3
+  userloginservice3:
+    build:
+      context: .
+      dockerfile: UserLoginService/Dockerfile
+    container_name: userloginservice3
+    expose:
+      - "80"
+      - "443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=pgpool;Port=5432;Database=userlogindb;Username=postgres;Password=postgres;
+      - ConnectionStrings__RedisConnection=redis:6379,abortConnect=false,connectTimeout=5000,syncTimeout=5000
+    depends_on:
+      - pgpool
+      - redis
+    restart: on-failure
+    networks:
+      - microservice-network
+    # Health check to ensure the service is running properly
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    # For high-load scenarios
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # User Login Client (for testing)
+  userloginclient:
+    build:
+      context: .
+      dockerfile: UserLoginClient/Dockerfile
+    container_name: userloginclient
+    depends_on:
+      - envoy
+    environment:
+      - GRPC_SERVICE_URL=http://envoy:8080
+    networks:
+      - microservice-network
+    # Interactive mode
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./logs:/app/logs
+
+  # PgPool-II for PostgreSQL connection pooling and load balancing
+  pgpool:
+    image: bitnami/pgpool:latest
+    container_name: pgpool
+    ports:
+      - "5433:5432"
+    environment:
+      - PGPOOL_ADMIN_USERNAME=admin
+      - PGPOOL_ADMIN_PASSWORD=admin
+      - PGPOOL_SR_CHECK_USER=postgres
+      - PGPOOL_SR_CHECK_PASSWORD=postgres
+      - PGPOOL_POSTGRES_USERNAME=postgres
+      - PGPOOL_POSTGRES_PASSWORD=postgres
+      - PGPOOL_ENABLE_LOAD_BALANCING=yes
+      - PGPOOL_NUM_INIT_CHILDREN=64
+      - PGPOOL_MAX_POOL=8
+      - PGPOOL_CHILD_LIFE_TIME=300
+      - PGPOOL_CONNECTION_LIFE_TIME=900
+      - PGPOOL_CLIENT_IDLE_LIMIT=300
+      - PGPOOL_POSTGRES_HOSTS=postgresql
+      - PGPOOL_POSTGRES_PORTS=5432
+      - PGPOOL_BACKEND_NODES=0:postgresql:5432:postgres:postgres
+    volumes:
+      - ./pgpool/conf/pgpool.conf:/opt/bitnami/pgpool/conf/pgpool.conf
+      - ./pgpool/conf/pool_hba.conf:/opt/bitnami/pgpool/conf/pool_hba.conf
+      - pgpool-data:/bitnami/pgpool
+    depends_on:
+      - postgresql
+    networks:
+      - microservice-network
+    healthcheck:
+      test: ["CMD", "/opt/bitnami/scripts/pgpool/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # PostgreSQL Database (Bitnami)
+  postgresql:
+    image: bitnami/postgresql:16
+    container_name: postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DATABASE=userlogindb
+      # Performance tuning for high load
+      - POSTGRESQL_SHARED_BUFFERS=512MB
+      - POSTGRESQL_EFFECTIVE_CACHE_SIZE=2GB
+      - POSTGRESQL_MAX_CONNECTIONS=300
+      - POSTGRESQL_WORK_MEM=16MB
+      - POSTGRESQL_MAINTENANCE_WORK_MEM=256MB
+      - POSTGRESQL_MAX_WORKER_PROCESSES=8
+      - POSTGRESQL_MAX_PARALLEL_WORKERS=8
+      - POSTGRESQL_MAX_PARALLEL_WORKERS_PER_GATHER=4
+      - POSTGRESQL_RANDOM_PAGE_COST=1.1
+      - POSTGRESQL_CHECKPOINT_COMPLETION_TARGET=0.9
+      - POSTGRESQL_WAL_BUFFERS=16MB
+      - POSTGRESQL_DEFAULT_STATISTICS_TARGET=100
+      # Add these parameters to fix connectivity issues
+      - ALLOW_EMPTY_PASSWORD=no
+      - POSTGRESQL_POSTGRES_PASSWORD=postgres
+      - POSTGRESQL_CLIENT_MIN_MESSAGES=error
+    volumes:
+      - postgresql-data:/bitnami/postgresql
+    networks:
+      - microservice-network
+    healthcheck:
+      test: ["CMD", "/opt/bitnami/scripts/postgresql/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # For high-load scenarios
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.75'
+          memory: 1G
+
+  # pgAdmin for Database Management (optional)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    depends_on:
+      - postgresql
+    networks:
+      - microservice-network
+
+  # Redis for caching (useful for high load scenarios)
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - microservice-network
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis-data:/data
+    # For high-load scenarios
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - microservice-network
+    depends_on:
+      - userloginservice1
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - microservice-network
+    depends_on:
+      - prometheus
+
+volumes:
+  postgresql-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  pgpool-data:
+
+networks:
+  microservice-network:
+    driver: bridge
