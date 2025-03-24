@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+option csharp_namespace = "UserLoginService.Protos";
+
+package userlogin;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// The UserLoginService service definition.
+service UserLoginService {
+  // Records a user login event
+  rpc UserLoginConnect (UserLoginRequest) returns (UserLoginResponse);
+  
+  // Gets all IP addresses a user has logged in from
+  rpc GetAllUserIPs (UserIdRequest) returns (IPAddressListResponse);
+  
+  // Gets all users who have logged in from a specific IP address
+  rpc GetUsersByIP (IPAddressRequest) returns (UserListResponse);
+  
+  // Gets the last login timestamp for a specific user
+  rpc UserLastLogin (UserIdRequest) returns (UserLastLoginResponse);
+}
+
+// Request message containing user login information
+message UserLoginRequest {
+  int64 user_id = 1;
+  string ip_address = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+// Response for the UserLoginConnect method
+message UserLoginResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Request for GetAllUserIPs method
+message UserIdRequest {
+  int64 user_id = 1;
+}
+
+// Response containing a list of IP addresses
+message IPAddressListResponse {
+  repeated IPAddressInfo ip_addresses = 1;
+}
+
+// IP address information including when it was last used
+message IPAddressInfo {
+  string ip_address = 1;
+  google.protobuf.Timestamp last_login = 2;
+  // Numeric representation for faster searching/pattern matching
+  uint64 ip_numeric_high = 3; // High 64 bits for IPv6, or 0 for IPv4
+  uint64 ip_numeric_low = 4;  // Low 64 bits for IPv6, or full IPv4 as uint32
+}
+
+// Request for GetUsersByIP method
+message IPAddressRequest {
+  string ip_address = 1;
+}
+
+// Response containing a list of users
+message UserListResponse {
+  repeated UserInfo users = 1;
+}
+
+// User information including when they last logged in
+message UserInfo {
+  int64 user_id = 1;
+  google.protobuf.Timestamp last_login = 2;
+  string ip_address = 3;
+  // Numeric representation for faster searching/pattern matching
+  uint64 ip_numeric_high = 4; // High 64 bits for IPv6, or 0 for IPv4
+  uint64 ip_numeric_low = 5;  // Low 64 bits for IPv6, or full IPv4 as uint32
+}
+
+// Response for the UserLastLogin method
+message UserLastLoginResponse {
+  bool found = 1;
+  int64 user_id = 2;
+  google.protobuf.Timestamp last_login = 3;
+  string ip_address = 4;
+  // Numeric representation for faster searching/pattern matching
+  uint64 ip_numeric_high = 5; // High 64 bits for IPv6, or 0 for IPv4
+  uint64 ip_numeric_low = 6;  // Low 64 bits for IPv6, or full IPv4 as uint32
+}
