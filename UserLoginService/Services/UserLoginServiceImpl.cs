@@ -393,22 +393,22 @@ namespace UserLoginService.Services
 
                         //_logger.LogWarning ($"{request.IpAddress} {patternHighBits}:{patternLowBits}");
 
-                        queryable = queryable.Where(r => 
-                            (r.IpNumericHigh & patternHighBits) == patternHighBits &&
-                            (r.IpNumericLow  & patternLowBits)  == patternLowBits);
+                        //queryable = queryable.Where(r => 
+                        //    (r.IpNumericHigh & patternHighBits) == patternHighBits &&
+                        //    (r.IpNumericLow  & patternLowBits)  == patternLowBits);
 
                         // For CIDR-like prefix matching
-                        /*if (patternHighBits == 0 && request.IpAddress.Contains("."))
+                        if (patternHighBits == 0 && request.IpAddress.Contains("."))
                         {
                             // IPv4 pattern matching - simplified approach using string prefix
-                            var ipPattern = request.IpAddress.TrimEnd('*', '.');
+                            //var ipPattern = request.IpAddress.TrimEnd('*', '.');
 
-                            _logger.LogWarning ($"{patternHighBits}:{patternLowBits}");
+                            //_logger.LogWarning ($"{patternHighBits}:{patternLowBits}");
 
-                            queryable = queryable.Where(r => r.IpAddress.StartsWith(ipPattern));
-                            //queryable = queryable.Where(r => 
-                            //    r.IpNumericHigh == patternHighBits && 
-                            //    (r.IpNumericLow & patternLowBits) == patternLowBits);
+                            //queryable = queryable.Where(r => r.IpAddress.StartsWith(ipPattern));
+                            /queryable = queryable.Where(r => 
+                                r.IpNumericHigh == patternHighBits && 
+                                (r.IpNumericLow & cidrPrefixLength) == patternLowBits);
                         }
                         else
                         {
@@ -416,7 +416,7 @@ namespace UserLoginService.Services
                             // In a production system, you would implement bit-masking here based on cidrPrefixLength
                             var ipPattern = request.IpAddress.TrimEnd('*', '.');
                             queryable = queryable.Where(r => r.IpAddress.StartsWith(ipPattern));
-                        }*/
+                        }
                     }
                 
                     // Complete the query with tagging, grouping, and projection
