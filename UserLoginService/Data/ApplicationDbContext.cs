@@ -19,32 +19,31 @@ namespace UserLoginService.Data
             //modelBuilder.Entity<UserLoginRecord>()
             //.HasKey(nameof(UserLoginRecord.UserId), nameof((UserLoginRecord.IpAddress)));
 
-            // Create index on UserId for faster lookups
-            modelBuilder.Entity<UserLoginRecord>()
-                .HasIndex(r => r.UserId)
-                .HasDatabaseName("idx_user_login_records_user_id");
+            modelBuilder.Entity<UserLoginRecord>().ToTable("user_login_records");
 
-            // Create index on IpAddress for faster lookups
+            // Define composite primary key
             modelBuilder.Entity<UserLoginRecord>()
-                .HasIndex(r => r.IpAddress)
-                .HasDatabaseName("idx_user_login_records_ip_address");
+                .HasKey(r => new { r.UserId, r.IpAddress });
 
-            // Create a compound index on both UserId and IpAddress
+            // Composite index for UserId + IpAddress
             modelBuilder.Entity<UserLoginRecord>()
                 .HasIndex(r => new { r.UserId, r.IpAddress })
                 .HasDatabaseName("idx_user_login_records_user_id_ip_address");
 
+            // Index on IpAddress for queries filtering only by IP
             modelBuilder.Entity<UserLoginRecord>()
-                .HasIndex(r => r.IpNumericHigh)
-                .HasDatabaseName("idx_user_login_records_ip_numeric_high");
+                .HasIndex(r => r.IpAddress)
+                .HasDatabaseName("idx_user_login_records_ip_address");
 
+            // Indexes for numeric IP parts (if used in range queries)
             modelBuilder.Entity<UserLoginRecord>()
-               .HasIndex(r => r.IpNumericLow)
-               .HasDatabaseName("idx_user_login_records_ip_numeric_low");
+                .HasIndex(r => new { r.IpNumericHigh, r.IpNumericLow })
+                .HasDatabaseName("idx_user_login_records_ip_numeric_range");
 
+            // Composite index for UserId and numeric IP parts
             modelBuilder.Entity<UserLoginRecord>()
-               .HasIndex(r => new { r.UserId, r.IpNumericHigh, r.IpNumericLow })
-               .HasDatabaseName("idx_user_login_records_user_id_ip_numeric_high_ip_numeric_low");
+                .HasIndex(r => new { r.UserId, r.IpNumericHigh, r.IpNumericLow })
+                .HasDatabaseName("idx_user_login_records_user_id_ip_numeric");
         }
     }
 }
