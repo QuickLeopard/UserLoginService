@@ -405,10 +405,10 @@ namespace UserLoginService.Services
 
                             _logger.LogWarning ($"{patternHighBits}:{patternLowBits} {cidrPrefixLength}");
 
-                            //queryable = queryable.Where(r => r.IpAddress.StartsWith(ipPattern));
-                            /queryable = queryable.Where(r => 
+                            queryable = queryable.Where(r => r.IpAddress.StartsWith(ipPattern));
+                            /*queryable = queryable.Where(r => 
                                 r.IpNumericHigh == patternHighBits && 
-                                (r.IpNumericLow & cidrPrefixLength) == patternLowBits);
+                                (r.IpNumericLow & cidrPrefixLength) == patternLowBits);*/
                         }
                         else
                         {
