@@ -389,7 +389,8 @@ namespace UserLoginService.Services
                     }
                     else
                     {
-                        
+
+                        long bitMask = (long)Utilities.IpAddressConverter.GetPrefixBitMask (request.IpAddress);
 
                         //_logger.LogWarning ($"{request.IpAddress} {patternHighBits}:{patternLowBits}");
 
@@ -401,14 +402,14 @@ namespace UserLoginService.Services
                         if (patternHighBits == 0 && request.IpAddress.Contains("."))
                         {
                             // IPv4 pattern matching - simplified approach using string prefix
-                            //var ipPattern = request.IpAddress.TrimEnd('*', '.');
+                            var ipPattern = request.IpAddress.TrimEnd('*', '.');
 
-                            _logger.LogWarning ($"{patternHighBits}:{patternLowBits} {cidrPrefixLength}");
+                            _logger.LogWarning ($"{patternHighBits}:{patternLowBits} {bitMask}");
 
-                            queryable = queryable.Where(r => r.IpAddress.StartsWith(ipPattern));
-                            /*queryable = queryable.Where(r => 
+                            //queryable = queryable.Where(r => r.IpAddress.StartsWith(ipPattern));
+                            queryable = queryable.Where(r => 
                                 r.IpNumericHigh == patternHighBits && 
-                                (r.IpNumericLow & cidrPrefixLength) == patternLowBits);*/
+                                (r.IpNumericLow & bitMask) == patternLowBits);
                         }
                         else
                         {

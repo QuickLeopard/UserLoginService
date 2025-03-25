@@ -148,5 +148,20 @@ namespace UserLoginService.Utilities
                 return (patternHighBits & highMask) == (targetHighBits & highMask);
             }
         }
+
+        public static ulong GetPrefixBitMask(string ipAddressPrefix)
+        {
+            if (ipAddressPrefix.EndsWith('.') == false)
+            {
+                ipAddressPrefix = ipAddressPrefix + ".";
+            }
+
+            var segments = ipAddressPrefix.Count(c => c == '.');
+            var shift = Math.Max(0, 4 - segments) * 8;
+
+            ulong bitmask = ulong.MaxValue << shift;
+
+            return bitmask;
+        }
     }
 }
