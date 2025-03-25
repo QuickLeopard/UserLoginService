@@ -174,8 +174,8 @@ services:
       - PGPOOL_POSTGRES_PORTS=5432
       - PGPOOL_BACKEND_NODES=0:postgresql:5432:postgres:postgres
     volumes:
-      - ./pgpool/conf/pgpool.conf:/opt/bitnami/pgpool/conf/pgpool.conf
-      - ./pgpool/conf/pool_hba.conf:/opt/bitnami/pgpool/conf/pool_hba.conf
+      #- ./pgpool/conf/pgpool.conf:/opt/bitnami/pgpool/conf/pgpool.conf
+      #- ./pgpool/conf/pool_hba.conf:/opt/bitnami/pgpool/conf/pool_hba.conf
       - pgpool-data:/bitnami/pgpool
     depends_on:
       - postgresql
