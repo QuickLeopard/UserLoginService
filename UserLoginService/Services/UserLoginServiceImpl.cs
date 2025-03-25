@@ -403,7 +403,7 @@ namespace UserLoginService.Services
                             // IPv4 pattern matching - simplified approach using string prefix
                             //var ipPattern = request.IpAddress.TrimEnd('*', '.');
 
-                            //_logger.LogWarning ($"{patternHighBits}:{patternLowBits}");
+                            _logger.LogWarning ($"{patternHighBits}:{patternLowBits} {cidrPrefixLength}");
 
                             //queryable = queryable.Where(r => r.IpAddress.StartsWith(ipPattern));
                             /queryable = queryable.Where(r => 
